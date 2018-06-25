@@ -1,8 +1,15 @@
 import puppeteer = require('puppeteer');
 import * as fs from 'fs';
 
-const SEARCH_STRING = "caresync";
-const DEFAULT_START_URL = 'https://www.google.com/search?q=caresync';
+if (!process.env.SEARCH_STRING) {
+    console.error('Please supply a SEARCH_STRING.');
+    process.exit(1);
+}
+
+const SEARCH_STRING = process.env.SEARCH_STRING;
+
+console.log('Searching for', SEARCH_STRING);
+const DEFAULT_START_URL = `https://www.google.com/search?q=${SEARCH_STRING}`;
 
 //read from file in disk, so we don't go through same pages if we restart the process
 let pagesVisited = [];
@@ -102,7 +109,7 @@ async function visit(browser: puppeteer.Browser, url: string) {
     await page.goto(url, { waitUntil: 'networkidle2' });
 
     try {
-        const result = await page.evaluate(() => {
+        const result = await page.evaluate((searchString) => {
             const result = {
                 hasLinkToTarget: false,
                 links: []
@@ -111,7 +118,7 @@ async function visit(browser: puppeteer.Browser, url: string) {
 
             for (const el of elements) {
                 const link = el.href ? el.href.toLowerCase() : "";
-                if (link.indexOf(SEARCH_STRING) > -1) {
+                if (link.indexOf(searchString) > -1) {
                     result.hasLinkToTarget = true;
                 }
                 else if (link.length && !link.includes('javascript')) {
@@ -119,7 +126,7 @@ async function visit(browser: puppeteer.Browser, url: string) {
                 }
             }
             return result;
-        });
+        }, SEARCH_STRING);
 
         if (result.hasLinkToTarget) {
             console.log(url);

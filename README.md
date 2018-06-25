@@ -4,4 +4,4 @@ Supports stopping the process and resuming later.
 
 1. npm i
 2. npm run build
-3. npm start
+3. SEARCH_STRING=your_search_string_here npm start

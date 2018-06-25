@@ -10,8 +10,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const puppeteer = require("puppeteer");
 const fs = require("fs");
-const SEARCH_STRING = "caresync";
-const DEFAULT_START_URL = 'https://www.google.com/search?q=caresync';
+if (!process.env.SEARCH_STRING) {
+    console.error('Please supply a SEARCH_STRING.');
+    process.exit(1);
+}
+const SEARCH_STRING = process.env.SEARCH_STRING;
+console.log('Searching for', SEARCH_STRING);
+const DEFAULT_START_URL = `https://www.google.com/search?q=${SEARCH_STRING}`;
 //read from file in disk, so we don't go through same pages if we restart the process
 let pagesVisited = [];
 let pagesWithRefToTarget = [];
@@ -111,7 +116,7 @@ function visit(browser, url) {
         const page = yield browser.newPage();
         yield page.goto(url, { waitUntil: 'networkidle2' });
         try {
-            const result = yield page.evaluate(() => {
+            const result = yield page.evaluate((searchString) => {
                 const result = {
                     hasLinkToTarget: false,
                     links: []
@@ -119,7 +124,7 @@ function visit(browser, url) {
                 const elements = document.querySelectorAll('a');
                 for (const el of elements) {
                     const link = el.href ? el.href.toLowerCase() : "";
-                    if (link.indexOf(SEARCH_STRING) > -1) {
+                    if (link.indexOf(searchString) > -1) {
                         result.hasLinkToTarget = true;
                     }
                     else if (link.length && !link.includes('javascript')) {
@@ -127,7 +132,7 @@ function visit(browser, url) {
                     }
                 }
                 return result;
-            });
+            }, SEARCH_STRING);
             if (result.hasLinkToTarget) {
                 console.log(url);
                 yield foundUrlWithRefToTarget(url);
