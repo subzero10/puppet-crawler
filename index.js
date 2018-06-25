@@ -15,7 +15,14 @@ if (!process.env.SEARCH_STRING) {
     process.exit(1);
 }
 const SEARCH_STRING = process.env.SEARCH_STRING;
-console.log('Searching for', SEARCH_STRING);
+const URL_CONCURRENCY = +(process.env.URL_CONCURRENCY || 5);
+if (isNaN(URL_CONCURRENCY)) {
+    console.error('Please supply a valid value for URL_CONCURRENCY');
+    process.exit(1);
+}
+console.log('env received:');
+console.log('SEARCH_STRING', SEARCH_STRING);
+console.log('URL_CONCURRENCY', URL_CONCURRENCY);
 const DEFAULT_START_URL = `https://www.google.com/search?q=${SEARCH_STRING}`;
 //read from file in disk, so we don't go through same pages if we restart the process
 let pagesVisited = [];
@@ -110,12 +117,12 @@ function loadPagesToVisitInMemory() {
         });
     });
 }
-function visit(browser, url) {
+function evaluateUrl(browser, url) {
     return __awaiter(this, void 0, void 0, function* () {
-        yield pageVisited(url.toLowerCase());
         const page = yield browser.newPage();
-        yield page.goto(url, { waitUntil: 'networkidle2' });
         try {
+            yield pageVisited(url);
+            yield page.goto(url, { waitUntil: 'networkidle2' });
             const result = yield page.evaluate((searchString) => {
                 const result = {
                     hasLinkToTarget: false,
@@ -145,11 +152,23 @@ function visit(browser, url) {
         yield page.close();
     });
 }
+function visit(browser, urls) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const pagePromises = [];
+        for (let i = 0; i < urls.length; i++) {
+            const url = urls[i];
+            const promise = evaluateUrl(browser, url);
+            pagePromises.push(promise);
+        }
+        //wait for all pages to load
+        yield Promise.all(pagePromises);
+    });
+}
 function dequeue(browser) {
     return __awaiter(this, void 0, void 0, function* () {
-        const nextPage = pagesToVisit.pop();
-        if (nextPage) {
-            yield visit(browser, nextPage);
+        const nextPages = pagesToVisit.splice(0, URL_CONCURRENCY);
+        if (nextPages.length) {
+            yield visit(browser, nextPages);
             dequeue(browser);
         }
         else {

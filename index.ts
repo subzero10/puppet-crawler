@@ -5,10 +5,18 @@ if (!process.env.SEARCH_STRING) {
     console.error('Please supply a SEARCH_STRING.');
     process.exit(1);
 }
-
 const SEARCH_STRING = process.env.SEARCH_STRING;
+const URL_CONCURRENCY = +(process.env.URL_CONCURRENCY || 5);
+if (isNaN(URL_CONCURRENCY)) {
+    console.error('Please supply a valid value for URL_CONCURRENCY');
+    process.exit(1);
+}
 
-console.log('Searching for', SEARCH_STRING);
+console.log('ENV received');
+console.log('SEARCH_STRING:', SEARCH_STRING);
+console.log('URL_CONCURRENCY:', URL_CONCURRENCY);
+console.log();
+
 const DEFAULT_START_URL = `https://www.google.com/search?q=${SEARCH_STRING}`;
 
 //read from file in disk, so we don't go through same pages if we restart the process
@@ -100,15 +108,15 @@ async function loadPagesToVisitInMemory() {
     });
 }
 
-
-async function visit(browser: puppeteer.Browser, url: string) {
-
-    await pageVisited(url.toLowerCase());
+async function evaluateUrl(browser: puppeteer.Browser, url: string) {
 
     const page = await browser.newPage();
-    await page.goto(url, { waitUntil: 'networkidle2' });
 
     try {
+        await pageVisited(url);
+
+        await page.goto(url, { waitUntil: 'networkidle2' });
+
         const result = await page.evaluate((searchString) => {
             const result = {
                 hasLinkToTarget: false,
@@ -142,10 +150,22 @@ async function visit(browser: puppeteer.Browser, url: string) {
     await page.close();
 }
 
+async function visit(browser: puppeteer.Browser, urls: string[]) {
+    const pagePromises: Promise<void>[] = [];
+    for (let i = 0; i < urls.length; i++) {
+        const url = urls[i];
+        const promise = evaluateUrl(browser, url);
+        pagePromises.push(promise);
+    }
+
+    //wait for all pages to load
+    await Promise.all(pagePromises);
+}
+
 async function dequeue(browser: puppeteer.Browser) {
-    const nextPage = pagesToVisit.pop();
-    if (nextPage) {
-        await visit(browser, nextPage);
+    const nextPages = pagesToVisit.splice(0, URL_CONCURRENCY);
+    if (nextPages.length) {
+        await visit(browser, nextPages);
         dequeue(browser);
     }
     else {
