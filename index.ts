@@ -1,21 +1,22 @@
-import puppeteer = require('puppeteer');
+import * as puppeteer from 'puppeteer';
 import * as fs from 'fs';
+import { logger } from './logger';
 
 if (!process.env.SEARCH_STRING) {
-    console.error('Please supply a SEARCH_STRING.');
+    logger.error('Please supply a SEARCH_STRING.');
     process.exit(1);
 }
 const SEARCH_STRING = process.env.SEARCH_STRING;
 const URL_CONCURRENCY = +(process.env.URL_CONCURRENCY || 5);
 if (isNaN(URL_CONCURRENCY)) {
-    console.error('Please supply a valid value for URL_CONCURRENCY');
+    logger.error('Please supply a valid value for URL_CONCURRENCY');
     process.exit(1);
 }
 
-console.log('ENV received');
-console.log('SEARCH_STRING:', SEARCH_STRING);
-console.log('URL_CONCURRENCY:', URL_CONCURRENCY);
-console.log();
+logger.info('ENV received');
+logger.info('SEARCH_STRING:', SEARCH_STRING);
+logger.info('URL_CONCURRENCY:', URL_CONCURRENCY);
+logger.info("");
 
 const DEFAULT_START_URL = `https://www.google.com/search?q=${SEARCH_STRING}`;
 
@@ -137,14 +138,14 @@ async function evaluateUrl(browser: puppeteer.Browser, url: string) {
         }, SEARCH_STRING);
 
         if (result.hasLinkToTarget) {
-            console.log(url);
+            logger.info(url);
             await foundUrlWithRefToTarget(url);
         }
 
         await shouldVisit(url, result.links);
     }
     catch (e) {
-        console.error(e);
+        logger.error(e);
     }
 
     await page.close();
@@ -169,7 +170,7 @@ async function dequeue(browser: puppeteer.Browser) {
         dequeue(browser);
     }
     else {
-        console.log('Crawling is DONE!');
+        logger.info('Crawling is DONE!');
         await browser.close();
     }
 }

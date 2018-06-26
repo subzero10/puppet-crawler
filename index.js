@@ -10,20 +10,21 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const puppeteer = require("puppeteer");
 const fs = require("fs");
+const logger_1 = require("./logger");
 if (!process.env.SEARCH_STRING) {
-    console.error('Please supply a SEARCH_STRING.');
+    logger_1.logger.error('Please supply a SEARCH_STRING.');
     process.exit(1);
 }
 const SEARCH_STRING = process.env.SEARCH_STRING;
 const URL_CONCURRENCY = +(process.env.URL_CONCURRENCY || 5);
 if (isNaN(URL_CONCURRENCY)) {
-    console.error('Please supply a valid value for URL_CONCURRENCY');
+    logger_1.logger.error('Please supply a valid value for URL_CONCURRENCY');
     process.exit(1);
 }
-console.log('ENV received');
-console.log('SEARCH_STRING:', SEARCH_STRING);
-console.log('URL_CONCURRENCY:', URL_CONCURRENCY);
-console.log();
+logger_1.logger.info('ENV received');
+logger_1.logger.info('SEARCH_STRING:', SEARCH_STRING);
+logger_1.logger.info('URL_CONCURRENCY:', URL_CONCURRENCY);
+logger_1.logger.info("");
 const DEFAULT_START_URL = `https://www.google.com/search?q=${SEARCH_STRING}`;
 //read from file in disk, so we don't go through same pages if we restart the process
 let pagesVisited = [];
@@ -142,13 +143,13 @@ function evaluateUrl(browser, url) {
                 return result;
             }, SEARCH_STRING);
             if (result.hasLinkToTarget) {
-                console.log(url);
+                logger_1.logger.info(url);
                 yield foundUrlWithRefToTarget(url);
             }
             yield shouldVisit(url, result.links);
         }
         catch (e) {
-            console.error(e);
+            logger_1.logger.error(e);
         }
         yield page.close();
     });
@@ -173,7 +174,7 @@ function dequeue(browser) {
             dequeue(browser);
         }
         else {
-            console.log('Crawling is DONE!');
+            logger_1.logger.info('Crawling is DONE!');
             yield browser.close();
         }
     });

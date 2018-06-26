@@ -12,7 +12,10 @@
   "license": "ISC",
   "dependencies": {
     "@types/puppeteer": "^1.3.4",
+    "@types/winston": "^2.3.9",
     "puppeteer": "^1.5.0",
-    "typescript": "^2.9.2"
+    "slack-winston": "0.0.9",
+    "typescript": "^2.9.2",
+    "winston": "^3.0.0"
   }
 }
