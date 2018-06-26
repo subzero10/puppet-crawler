@@ -168,6 +168,10 @@ async function visit(browser: puppeteer.Browser, urls: string[]) {
     const pagePromises: Promise<void>[] = [];
     for (let i = 0; i < urls.length; i++) {
         const url = urls[i];
+        
+        if (pagesVisited.includes(url)) {
+            continue;
+        }
         const promise = evaluateUrl(browser, url);
         pagePromises.push(promise);
     }
