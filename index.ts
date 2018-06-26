@@ -14,9 +14,8 @@ if (isNaN(URL_CONCURRENCY)) {
 }
 
 logger.info('ENV received');
-logger.info('SEARCH_STRING:', SEARCH_STRING);
-logger.info('URL_CONCURRENCY:', URL_CONCURRENCY);
-logger.info("");
+logger.info('SEARCH_STRING: ' + SEARCH_STRING);
+logger.info('URL_CONCURRENCY: ' + URL_CONCURRENCY);
 
 const DEFAULT_START_URL = `https://www.google.com/search?q=${SEARCH_STRING}`;
 
@@ -179,10 +178,9 @@ async function dequeue(browser: puppeteer.Browser) {
 
     await loadPagesToVisitInMemory();
     await loadVisitedPagesInMemory();
-    //{ args: ['--no-sandbox', '--disable-setuid-sandbox'] }
     const browser = await puppeteer.launch({
         headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        //args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
     dequeue(browser);
 
