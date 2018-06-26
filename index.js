@@ -20,9 +20,10 @@ if (isNaN(URL_CONCURRENCY)) {
     console.error('Please supply a valid value for URL_CONCURRENCY');
     process.exit(1);
 }
-console.log('env received:');
-console.log('SEARCH_STRING', SEARCH_STRING);
-console.log('URL_CONCURRENCY', URL_CONCURRENCY);
+console.log('ENV received');
+console.log('SEARCH_STRING:', SEARCH_STRING);
+console.log('URL_CONCURRENCY:', URL_CONCURRENCY);
+console.log();
 const DEFAULT_START_URL = `https://www.google.com/search?q=${SEARCH_STRING}`;
 //read from file in disk, so we don't go through same pages if we restart the process
 let pagesVisited = [];
@@ -180,7 +181,11 @@ function dequeue(browser) {
 (() => __awaiter(this, void 0, void 0, function* () {
     yield loadPagesToVisitInMemory();
     yield loadVisitedPagesInMemory();
-    const browser = yield puppeteer.launch({ headless: true });
+    //{ args: ['--no-sandbox', '--disable-setuid-sandbox'] }
+    const browser = yield puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
     dequeue(browser);
 }))();
 //# sourceMappingURL=index.js.map
