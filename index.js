@@ -42,6 +42,18 @@ function shouldVisit(sourceUrl, urls) {
         return new Promise((resolve, reject) => {
             let toVisit = urls.filter(x => sourceUrl !== x || !pagesToVisit.includes(x));
             toVisit = toVisit.filter(x => !pagesVisited.includes(x));
+            toVisit = toVisit.filter(x => {
+                if (x.indexOf('webcache.googleuser') > -1) {
+                    return false;
+                }
+                if (x.indexOf('.google.com') > -1) {
+                    if (x.indexOf('caresync') > -1) {
+                        return true;
+                    }
+                    return false;
+                }
+                return true;
+            });
             pagesToVisit = pagesToVisit.concat(toVisit);
             //replace every time
             fs.writeFile("queued-urls.txt", `${pagesToVisit.join('\n')}\n`, (err) => {
@@ -64,7 +76,9 @@ function pageVisited(url) {
     return __awaiter(this, void 0, void 0, function* () {
         return new Promise((resolve, reject) => {
             if (pagesVisited.includes(url)) {
-                console.warn(url, 'visited more than once!');
+                logger_1.logger.warn(url + ' visited more than once!');
+                resolve();
+                return;
             }
             pagesVisited.push(url);
             fs.appendFile("visited-urls.txt", `${url}\n`, (err) => {
@@ -148,7 +162,7 @@ function evaluateUrl(browser, url) {
             yield shouldVisit(url, result.links);
         }
         catch (e) {
-            logger_1.logger.error(e);
+            logger_1.logger.error(e.toString());
         }
         yield page.close();
     });

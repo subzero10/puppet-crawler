@@ -36,6 +36,18 @@ async function shouldVisit(sourceUrl: string, urls: string[]) {
     return new Promise((resolve, reject) => {
         let toVisit = urls.filter(x => sourceUrl !== x || !pagesToVisit.includes(x));
         toVisit = toVisit.filter(x => !pagesVisited.includes(x));
+        toVisit = toVisit.filter(x => {
+            if (x.indexOf('webcache.googleuser') > -1) {
+                return false;
+            }
+            if (x.indexOf('.google.com') > -1) {
+                if (x.indexOf('caresync') > -1) {
+                    return true;
+                }
+                return false;
+            }
+            return true;
+        });
         pagesToVisit = pagesToVisit.concat(toVisit);
         //replace every time
         fs.writeFile("queued-urls.txt", `${pagesToVisit.join('\n')}\n`, (err) => {
@@ -56,7 +68,9 @@ async function foundUrlWithRefToTarget(url: string) {
 async function pageVisited(url: string) {
     return new Promise((resolve, reject) => {
         if (pagesVisited.includes(url)) {
-            console.warn(url, 'visited more than once!');
+            logger.warn(url + ' visited more than once!');
+            resolve();
+            return;
         }
         pagesVisited.push(url);
         fs.appendFile("visited-urls.txt", `${url}\n`, (err) => {
@@ -144,7 +158,7 @@ async function evaluateUrl(browser: puppeteer.Browser, url: string) {
         await shouldVisit(url, result.links);
     }
     catch (e) {
-        logger.error(e);
+        logger.error(e.toString());
     }
 
     await page.close();
